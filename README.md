@@ -1,7 +1,3 @@
-Here is a README file in Markdown format for your project, which includes the details of the provided `main.cpp` file and the overall project goal of running several tests for graphics in C++.
-
----
-
 # Graphic Tests in C++
 
 ## Project Overview
