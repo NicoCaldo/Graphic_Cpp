@@ -7,28 +7,14 @@
 
 sf::CircleShape circle_vector[ROW][COL];
 
-int main()
-{
-    sf::RenderWindow window(sf::VideoMode(480, 480), "Drawer");
-    window.setFramerateLimit(30);
-    // Radius of each circle
+void drawCircles(sf::RenderWindow& window, float variationX, float variationY) {
     const float maxRadius = 48.f;
-
-    // Mouse position
-    bool isDragging = false;
-    sf::Vector2i previousMousePos;
-    float variationX = 0.0f;
-    float variationY = 0.0f;
-
     int alpha = 255;
 
-    // Initialize circles in a 5x5 grid
-    for (int row = 0; row < ROW; ++row)
-    {
+    for (int row = 0; row < ROW; ++row) {
         float yPos = row * 2 * maxRadius + maxRadius + variationY; // Y position of the row
 
-        for (int col = 0; col < COL; ++col)
-        {
+        for (int col = 0; col < COL; ++col) {
             float xPos = col * 2 * maxRadius + maxRadius + variationX; // X position of the column
 
             // Shift odd rows by half radius on the x-axis
@@ -61,13 +47,28 @@ int main()
 
             circle_vector[row][col].setRadius(radius);
             circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
-            circle_vector[row][col].setOutlineColor(sf::Color(std::rand() % 255, std::rand() % 255, std::rand() % 255, static_cast<sf::Uint8>(alpha)));
+            circle_vector[row][col].setOutlineColor(sf::Color(200, 200, 200, static_cast<sf::Uint8>(alpha)));
             circle_vector[row][col].setFillColor(sf::Color::Transparent);
             circle_vector[row][col].setOutlineThickness(2.f);
+
             window.draw(circle_vector[row][col]);
         }
     }
+}
 
+int main()
+{
+    sf::RenderWindow window(sf::VideoMode(480, 480), "Drawer");
+    window.setFramerateLimit(30);
+
+    // Mouse position
+    bool isDragging = false;
+    sf::Vector2i previousMousePos;
+    float variationX = 0.0f;
+    float variationY = 0.0f;
+
+    // Initialize circles in a 5x5 grid
+    drawCircles(window, variationX, variationY);
 
     while (window.isOpen())
     {
@@ -109,47 +110,7 @@ int main()
         window.clear();
         
         // Re-Draw circles in a 5x5 grid
-        for (int row = 0; row < ROW; ++row)
-        {
-            float yPos = row * 2 * maxRadius + maxRadius + variationY; // Y position of the row
-
-            for (int col = 0; col < COL; ++col)
-            {
-                float xPos = col * 2 * maxRadius + maxRadius + variationX; // X position of the column
-
-                // Shift odd rows by half radius on the x-axis
-                if (row % 2 != 0)
-                    xPos += maxRadius;
-
-                // Calculate the distance from the center
-                float centerX = 240.f; // Center X coordinate
-                float centerY = 240.f; // Center Y coordinate
-                float distance = std::sqrt(std::pow(xPos - centerX, 2) + std::pow(yPos - centerY, 2));
-
-                // Calculate the radius using a linear function
-                float radius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
-
-                // Special case for the center circle
-                if (distance == 0.f) distance = 0.00001f;
-
-                // Calculate the movement towards the center using a logarithmic function
-                float maxMovement = distance / 3.f;
-                float movement = maxMovement * (1.f - std::log(radius / maxRadius + 1) / std::log(2.f));
-
-                // Move the circle towards the center
-                float newXPos = xPos - (xPos - centerX) * movement / distance;
-                float newYPos = yPos - (yPos - centerY) * movement / distance;
-
-                if (radius < 0) radius = 0;
-                // Calculate the opacity based on the radius of the element
-                alpha = static_cast<int>(255.0f * (-1) * std::atan(- radius / 20)); 
-                if (alpha > 255.0f) alpha = 255.0f;
-
-                circle_vector[row][col].setRadius(radius);
-                circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
-                window.draw(circle_vector[row][col]);
-            }
-        }
+        drawCircles(window, variationX, variationY);
 
         window.display();
     }
