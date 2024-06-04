@@ -103,26 +103,35 @@ int main()
                 window.close();
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                std::cout << "Mouse Position - x: " << mousePos.x << ", y: " << mousePos.y << std::endl;
-                for (int row = 0; row < ROW; ++row) {
-                    for (int col = 0; col < COL; ++col) {
-                        sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());;
-                        float radius = circle_vector[row][col].getRadius();
-                        if (isPointInCircle(sf::Vector2f(mousePos), circlePos, radius)) {
-                            if(circle_vector[row][col].getFillColor() == sf::Color::White)
-                                circle_vector[row][col].setFillColor(sf::Color::Transparent);
-                            else
-								circle_vector[row][col].setFillColor(sf::Color::White);
-                            break;
-                        }
-                    }
-                }
                 isDragging = true; // Start dragging
                 previousMousePos = sf::Mouse::getPosition(window); // Initialize previous position
             }
             else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
+            {
+                // Get the current mouse position and calculate the movement
+                sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+                sf::Vector2i moveVector = currentMousePos - previousMousePos;
+
+                if (moveVector.x < 10 || moveVector.y < 10)
+                {
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    std::cout << "Mouse Position - x: " << mousePos.x << ", y: " << mousePos.y << std::endl;
+                    for (int row = 0; row < ROW; ++row) {
+                        for (int col = 0; col < COL; ++col) {
+                            sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());;
+                            float radius = circle_vector[row][col].getRadius();
+                            if (isPointInCircle(sf::Vector2f(mousePos), circlePos, radius)) {
+                                if (circle_vector[row][col].getFillColor() == sf::Color::White)
+                                    circle_vector[row][col].setFillColor(sf::Color::Transparent);
+                                else
+                                    circle_vector[row][col].setFillColor(sf::Color::White);
+                                break;
+                            }
+                        }
+                    }
+                }
                 isDragging = false; // Stop dragging
+            }
             else if (event.type == sf::Event::MouseMoved && isDragging)
             {
                 // Get the current mouse position
