@@ -7,6 +7,15 @@
 
 sf::CircleShape circle_vector[ROW][COL];
 
+void updateCircleOpacity(sf::CircleShape& circle, int alpha) {
+    sf::Color currentColor = circle.getOutlineColor();
+    currentColor.a = static_cast<sf::Uint8>(alpha);
+    circle.setOutlineColor(currentColor);
+    currentColor = circle.getFillColor();
+    currentColor.a = static_cast<sf::Uint8>(alpha);
+    circle.setFillColor(currentColor);
+}
+
 bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
     float dx = point.x - circlePos.x;
     float dy = point.y - circlePos.y;
@@ -14,7 +23,7 @@ bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
     return distance <= radius;
 }
 
-void drawCircles(sf::RenderWindow& window, float variationX, float variationY) {
+void drawCircles(sf::RenderWindow& window, float variationX, float variationY, bool init = false) {
     const float maxRadius = 48.f;
     int alpha = 255;
 
@@ -55,10 +64,16 @@ void drawCircles(sf::RenderWindow& window, float variationX, float variationY) {
             // TODO fix colour managment
             circle_vector[row][col].setRadius(radius);
             circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
-            circle_vector[row][col].setOutlineColor(sf::Color(200, 200, 200, static_cast<sf::Uint8>(alpha)));
-            //circle_vector[row][col].setFillColor(sf::Color::Transparent);
-            circle_vector[row][col].setOutlineThickness(2.f);
-
+            if (init)
+            {
+                circle_vector[row][col].setOutlineColor(sf::Color(200, 200, 200, static_cast<sf::Uint8>(alpha)));
+                circle_vector[row][col].setFillColor(sf::Color::Transparent);
+                circle_vector[row][col].setOutlineThickness(2.f);
+            }
+            else
+            {
+                updateCircleOpacity(circle_vector[row][col], alpha);
+            }
             window.draw(circle_vector[row][col]);
         }
     }
@@ -76,7 +91,7 @@ int main()
     float variationY = 0.0f;
 
     // Initialize circles in a 5x5 grid
-    drawCircles(window, variationX, variationY);
+    drawCircles(window, variationX, variationY, true);
 
     while (window.isOpen())
     {
@@ -95,7 +110,10 @@ int main()
                         sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());;
                         float radius = circle_vector[row][col].getRadius();
                         if (isPointInCircle(sf::Vector2f(mousePos), circlePos, radius)) {
-                            circle_vector[row][col].setFillColor(sf::Color::Red);
+                            if(circle_vector[row][col].getFillColor() == sf::Color::White)
+                                circle_vector[row][col].setFillColor(sf::Color::Transparent);
+                            else
+								circle_vector[row][col].setFillColor(sf::Color::White);
                             break;
                         }
                     }
