@@ -7,6 +7,13 @@
 
 sf::CircleShape circle_vector[ROW][COL];
 
+bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
+    float dx = point.x - circlePos.x;
+    float dy = point.y - circlePos.y;
+    float distance = std::sqrt(dx * dx + dy * dy);
+    return distance <= radius;
+}
+
 void drawCircles(sf::RenderWindow& window, float variationX, float variationY) {
     const float maxRadius = 48.f;
     int alpha = 255;
@@ -45,10 +52,11 @@ void drawCircles(sf::RenderWindow& window, float variationX, float variationY) {
             alpha = static_cast<int>(255.0f * (-1) * std::atan(-radius / 20));
             if (alpha > 255.0f) alpha = 255.0f;
 
+            // TODO fix colour managment
             circle_vector[row][col].setRadius(radius);
             circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
             circle_vector[row][col].setOutlineColor(sf::Color(200, 200, 200, static_cast<sf::Uint8>(alpha)));
-            circle_vector[row][col].setFillColor(sf::Color::Transparent);
+            //circle_vector[row][col].setFillColor(sf::Color::Transparent);
             circle_vector[row][col].setOutlineThickness(2.f);
 
             window.draw(circle_vector[row][col]);
@@ -80,6 +88,18 @@ int main()
                 window.close();
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                std::cout << "Mouse Position - x: " << mousePos.x << ", y: " << mousePos.y << std::endl;
+                for (int row = 0; row < ROW; ++row) {
+                    for (int col = 0; col < COL; ++col) {
+                        sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());;
+                        float radius = circle_vector[row][col].getRadius();
+                        if (isPointInCircle(sf::Vector2f(mousePos), circlePos, radius)) {
+                            circle_vector[row][col].setFillColor(sf::Color::Red);
+                            break;
+                        }
+                    }
+                }
                 isDragging = true; // Start dragging
                 previousMousePos = sf::Mouse::getPosition(window); // Initialize previous position
             }
@@ -100,9 +120,9 @@ int main()
                 variationY = moveLength * std::sin(moveAngle);
 
                 // Print the mouse position, translation offsets, and movement vector info
-                std::cout << "Mouse Position - x: " << currentMousePos.x << ", y: " << currentMousePos.y << std::endl;
+                /*std::cout << "Mouse Position - x: " << currentMousePos.x << ", y: " << currentMousePos.y << std::endl;
                 std::cout << "Move Length: " << moveLength << ", Move Angle (radians): " << moveAngle << std::endl;
-                std::cout << "Variation X: " << variationX << ", Variation Y: " << variationY << std::endl;
+                std::cout << "Variation X: " << variationX << ", Variation Y: " << variationY << std::endl;*/
 
             }
         }
