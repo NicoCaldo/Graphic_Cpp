@@ -122,6 +122,13 @@ int main()
     // Set the position to the bottom of the window
     iconBackSprite.setPosition(225.f, 445.f); // 480 - 25 = 455 (bottom position)
 
+    // Variables for animation
+    bool isBouncing = false;
+    float bounceOffset = 0.f;
+    float bounceSpeed = 0.2f;
+    float bounceHeight = 10.f;
+    float originalY = iconBackSprite.getPosition().y;
+
     // Mouse position
     bool isDragging = false;
     sf::Vector2i previousMousePos;
@@ -141,6 +148,14 @@ int main()
                 window.close();
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                sf::FloatRect spriteBounds = iconBackSprite.getGlobalBounds();
+
+                if (spriteBounds.contains(static_cast<sf::Vector2f>(mousePos)))
+                {
+                    isBouncing = true;
+                }
+
                 isDragging = true; // Start dragging
                 previousMousePos = sf::Mouse::getPosition(window); // Initialize previous position
             }
@@ -193,6 +208,27 @@ int main()
         }
 
         window.clear();
+
+        // Update animation if bouncing
+        if (isBouncing) {
+            bounceOffset += bounceSpeed;
+            // Stop bouncing after one full cycle
+            if (bounceOffset >= 2 * 3.14159f) {
+                bounceOffset = 0.f;
+                isBouncing = false;
+                iconBackSprite.setPosition(225.f, originalY);
+            }
+            else if (bounceOffset >= 3.14159f) {
+                float newY = originalY - std::abs(std::sin(bounceOffset)) * bounceHeight;
+                iconBackSprite.setPosition(225.f, newY);
+            }
+            else {
+                float newY = originalY - std::abs(1.2 * std::sin(bounceOffset)) * bounceHeight;
+                iconBackSprite.setPosition(225.f, newY);
+            }
+
+            
+        }
 
         // Draw the background sprite
         window.draw(iconBackSprite);
