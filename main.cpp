@@ -81,8 +81,46 @@ void drawCircles(sf::RenderWindow& window, float variationX, float variationY, b
 
 int main()
 {
+    // Request anti-aliasing
+    sf::ContextSettings settings;
+    settings.antialiasingLevel = 16; // Set the desired level of anti-aliasing
+
     sf::RenderWindow window(sf::VideoMode(480, 480), "Drawer");
     window.setFramerateLimit(30);
+
+    // Load the image
+    sf::Image iconBackImage;
+    if (!iconBackImage.loadFromFile("images/i_back.png")) {
+        std::cerr << "Error loading image" << std::endl;
+        return -1;
+    }
+
+    // Invert the colors of the image
+    sf::Vector2u imageSize = iconBackImage.getSize();
+    for (unsigned int x = 0; x < imageSize.x; ++x) {
+        for (unsigned int y = 0; y < imageSize.y; ++y) {
+            sf::Color pixelColor = iconBackImage.getPixel(x, y);
+            pixelColor.r = 255 - pixelColor.r;
+            pixelColor.g = 255 - pixelColor.g;
+            pixelColor.b = 255 - pixelColor.b;
+            iconBackImage.setPixel(x, y, pixelColor);
+        }
+    }
+
+    // Create a texture from the inverted image
+    sf::Texture iconBackTexture;
+    iconBackTexture.loadFromImage(iconBackImage);
+    iconBackTexture.setSmooth(true);
+
+    // Create a sprite for the image
+    sf::Sprite iconBackSprite;
+    iconBackSprite.setTexture(iconBackTexture);
+
+    // Set the scale to resize the image to 50x50 pixels
+    iconBackSprite.setScale(25.f / iconBackTexture.getSize().x, 25.f / iconBackTexture.getSize().y);
+
+    // Set the position to the bottom of the window
+    iconBackSprite.setPosition(225.f, 445.f); // 480 - 25 = 455 (bottom position)
 
     // Mouse position
     bool isDragging = false;
@@ -155,6 +193,9 @@ int main()
         }
 
         window.clear();
+
+        // Draw the background sprite
+        window.draw(iconBackSprite);
         
         // Re-Draw circles in a 5x5 grid
         drawCircles(window, variationX, variationY);

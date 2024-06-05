@@ -24,4 +24,9 @@
       <Filter>File di risorse</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="images\i_back.png">
+      <Filter>File di risorse</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
