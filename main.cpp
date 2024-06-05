@@ -6,6 +6,7 @@
 #define MAX_SPHERE_D 240.0f
 
 sf::CircleShape circle_vector[ROW][COL];
+sf::Vector2f initialCenterCirclePos;
 
 void updateCircleOpacity(sf::CircleShape& circle, int alpha) {
     sf::Color currentColor = circle.getOutlineColor();
@@ -69,6 +70,10 @@ void drawCircles(sf::RenderWindow& window, float variationX, float variationY, b
                 circle_vector[row][col].setOutlineColor(sf::Color(200, 200, 200, static_cast<sf::Uint8>(alpha)));
                 circle_vector[row][col].setFillColor(sf::Color::Transparent);
                 circle_vector[row][col].setOutlineThickness(2.f);
+
+                if (row == 2 && col == 2) {
+                    initialCenterCirclePos = sf::Vector2f(newXPos - radius, newYPos - radius);
+                }
             }
             else
             {
@@ -122,12 +127,18 @@ int main()
     // Set the position to the bottom of the window
     iconBackSprite.setPosition(225.f, 445.f); // 480 - 25 = 455 (bottom position)
 
+    sf::FloatRect spriteBounds = iconBackSprite.getGlobalBounds();
+
     // Variables for animation
     bool isBouncing = false;
     float bounceOffset = 0.f;
     float bounceSpeed = 0.2f;
     float bounceHeight = 10.f;
     float originalY = iconBackSprite.getPosition().y;
+
+    bool animateBackToInitial = false;
+    float initialVariationX = 0.0f;
+    float initialVariationY = 0.0f;
 
     // Mouse position
     bool isDragging = false;
@@ -149,7 +160,6 @@ int main()
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
             {
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                sf::FloatRect spriteBounds = iconBackSprite.getGlobalBounds();
 
                 if (spriteBounds.contains(static_cast<sf::Vector2f>(mousePos)))
                 {
@@ -182,6 +192,11 @@ int main()
                             }
                         }
                     }
+                }
+
+                if (spriteBounds.contains(static_cast<sf::Vector2f>(currentMousePos)))
+                {
+                    animateBackToInitial = true;
                 }
                 isDragging = false; // Stop dragging
             }
@@ -225,11 +240,31 @@ int main()
             else {
                 float newY = originalY - std::abs(1.2 * std::sin(bounceOffset)) * bounceHeight;
                 iconBackSprite.setPosition(225.f, newY);
-            }
-
-            
+            }    
         }
 
+        // Animation to move circles back to initial positions
+        if (animateBackToInitial) {
+            // Determine the animation speed (adjust as needed)
+            const float animationSpeed = 5.0f;
+
+            // Calculate the movement vector from the initially centered circle to the center of the window
+            sf::Vector2f movementVector = initialCenterCirclePos - circle_vector[2][2].getPosition();
+            float distance = std::sqrt(movementVector.x * movementVector.x + movementVector.y * movementVector.y);
+
+            // Move all circles according to the movement vector
+            if (distance > animationSpeed) {
+                float ratio = animationSpeed / distance;
+                variationX += movementVector.x * ratio;
+                variationY += movementVector.y * ratio;
+            }
+            else {
+                // Reset the variations to move all circles to the center
+                variationX = initialCenterCirclePos.x - initialCenterCirclePos.x;
+                variationY = initialCenterCirclePos.y - initialCenterCirclePos.y;
+                animateBackToInitial = false;
+            }
+        }
         // Draw the background sprite
         window.draw(iconBackSprite);
         
