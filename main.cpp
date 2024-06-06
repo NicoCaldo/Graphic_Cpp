@@ -227,10 +227,11 @@ int main()
                     sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());
                     float radius = circle_vector[row][col].getRadius();
                     if (isPointInCircle(sf::Vector2f(currentMousePos), circlePos, radius) && isCircleVisible(circle_vector[row][col])) {
-                        if (circle_vector[row][col].getFillColor() == sf::Color::White)
-                            circle_vector[row][col].setFillColor(sf::Color::Transparent);
-                        else
+                        // < 256 = white
+                        if (circle_vector[row][col].getFillColor().toInteger() < 256)
                             circle_vector[row][col].setFillColor(sf::Color::White);
+                        else
+                            circle_vector[row][col].setFillColor(sf::Color::Transparent);
                         break;
                     }
                 }
