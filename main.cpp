@@ -277,6 +277,7 @@ int main()
                 // Reset the variations to move all circles to the center
                 variationX = initialCenterCirclePos.x - initialCenterCirclePos.x;
                 variationY = initialCenterCirclePos.y - initialCenterCirclePos.y;
+                variationXpre = variationYpre = 0;
                 animateBackToInitial = false;
             }
         }
