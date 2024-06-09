@@ -134,6 +134,7 @@ int main()
     sf::FloatRect spriteBounds = iconBackSprite.getGlobalBounds();
 
     // Variables for animation
+    uint8_t row_i, col_i = 0;
     bool isBouncing = false;
     float bounceOffset = 0.f;
     float bounceSpeed = 0.2f;
@@ -222,22 +223,52 @@ int main()
 
         if (hasClicked)
         {
-            for (int row = 0; row < ROW; ++row) {
-                for (int col = 0; col < COL; ++col) {
-                    sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());
-                    float radius = circle_vector[row][col].getRadius();
-                    if (isPointInCircle(sf::Vector2f(currentMousePos), circlePos, radius) && isCircleVisible(circle_vector[row][col])) {
-                        // < 256 = white
-                        if (circle_vector[row][col].getFillColor().toInteger() < 256)
-                            circle_vector[row][col].setFillColor(sf::Color::White);
-                        else
-                            circle_vector[row][col].setFillColor(sf::Color::Transparent);
-                        break;
+            static uint8_t stato = 0;
+
+            switch (stato)
+            {
+            case 0:
+                for (int row = 0; row < ROW; ++row) {
+                    for (int col = 0; col < COL; ++col) {
+                        sf::Vector2f circlePos = circle_vector[row][col].getPosition() + sf::Vector2f(circle_vector[row][col].getRadius(), circle_vector[row][col].getRadius());
+                        float radius = circle_vector[row][col].getRadius();
+                        if (isPointInCircle(sf::Vector2f(currentMousePos), circlePos, radius) && isCircleVisible(circle_vector[row][col])) {
+                            // Calculate the new variations to move the clicked circle to the center
+                            row_i = row;
+                            col_i = col;
+                            stato = 1;
+                            break;
+                        }
                     }
                 }
+                if (!stato)
+                    hasClicked = false;
+			break;
+            case 1:
+                // Determine the animation speed (adjust as needed)
+                const float animationSpeed = 5.0f;
+
+                // Calculate the movement vector from the initially centered circle to the center of the window
+                sf::Vector2f movementVector = initialCenterCirclePos - circle_vector[row_i][col_i].getPosition();
+                float distance = std::sqrt(movementVector.x * movementVector.x + movementVector.y * movementVector.y);
+
+                // Move all circles according to the movement vector
+                if (distance > animationSpeed) {
+                    float ratio = animationSpeed / distance;
+                    variationX += movementVector.x * ratio;
+                    variationY += movementVector.y * ratio;
+                }
+                else {
+                    // Reset the variations to move all circles to the center
+                    // variationX = variationY = 0;
+                    variationXpre = variationX;
+                    variationYpre = variationY;
+                    stato = 0;
+                    hasClicked = false;
+                }
+            break;
             }
-			hasClicked = false;
-		}
+        }
 
         // Update animation if bouncing
         if (isBouncing) {
@@ -275,8 +306,7 @@ int main()
             }
             else {
                 // Reset the variations to move all circles to the center
-                variationX = initialCenterCirclePos.x - initialCenterCirclePos.x;
-                variationY = initialCenterCirclePos.y - initialCenterCirclePos.y;
+                variationX = variationY = 0;
                 variationXpre = variationYpre = 0;
                 animateBackToInitial = false;
             }
