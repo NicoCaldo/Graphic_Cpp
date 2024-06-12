@@ -28,6 +28,63 @@ bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
     return distance <= radius;
 }
 
+void moveCircleAwayFromCenter(sf::RenderWindow& window, float variationX, float variationY, float& animationProgress) {
+    const float maxRadius = 48.f;
+    int alpha = 255;
+
+    for (int row = 0; row < ROW; ++row) {
+        float yPos = row * 2 * maxRadius + maxRadius + variationY; // Y position of the row
+
+        for (int col = 0; col < COL; ++col) {
+            float xPos = col * 2 * maxRadius + maxRadius + variationX; // X position of the column
+
+            // Shift odd rows by half radius on the x-axis
+            if (row % 2 != 0)
+                xPos += maxRadius;
+
+            // Calculate the distance from the center
+            float centerX = 240.f; // Center X coordinate
+            float centerY = 240.f; // Center Y coordinate
+            float distance = std::sqrt(std::pow(xPos - centerX, 2) + std::pow(yPos - centerY, 2));
+
+            // Skip the circle at the center
+            if (distance == 0.f)
+                return;
+
+            // Calculate the radius using a linear function
+            float radius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
+
+            // Special case for very small distances
+            if (distance < 0.00001f) distance = 0.00001f;
+
+            // Calculate the movement away from the center using a logarithmic function
+            float maxMovement = distance / 3.f;
+            float movement = maxMovement * (1.f - std::log(radius / maxRadius + 1) / std::log(2.f));
+
+            // Calculate the target position for the circle away from the center
+            float targetXPos = xPos + (xPos - centerX) * movement / distance;
+            float targetYPos = yPos + (yPos - centerY) * movement / distance;
+
+            // Interpolate the circle position between the current and target positions
+            float newXPos = xPos + (targetXPos - xPos) * animationProgress;
+            float newYPos = yPos + (targetYPos - yPos) * animationProgress;
+
+            if (radius < 0) radius = 0;
+            // Calculate the opacity based on the radius of the element
+            alpha = static_cast<int>(255.0f * (-1) * std::atan(-radius / 20));
+            if (alpha > 255.0f) alpha = 255.0f;
+
+            // Update the circle position, radius, and opacity
+            circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
+            circle_vector[row][col].setRadius(radius);
+            updateCircleOpacity(circle_vector[row][col], alpha);
+
+            // Draw the updated circle on the window
+            window.draw(circle_vector[row][col]);
+        }
+    }
+}
+
 void drawCircles(sf::RenderWindow& window, float variationX, float variationY, bool init = false) {
     const float maxRadius = 48.f;
     int alpha = 255;
@@ -135,11 +192,15 @@ int main()
 
     // Variables for animation
     uint8_t row_i, col_i = 0;
+    bool zoomAnimation = false;
     bool isBouncing = false;
     float bounceOffset = 0.f;
     float bounceSpeed = 0.2f;
     float bounceHeight = 10.f;
     float originalY = iconBackSprite.getPosition().y;
+
+    float animationProgress = 0.0f; // Initialize the animation progress to 0
+    const float animationSpeedZoom = 0.001f; // Adjust this value to control the animation speed
 
     bool animateBackToInitial = false;
     float initialVariationX = 0.0f;
@@ -245,6 +306,7 @@ int main()
                     hasClicked = false;
 			break;
             case 1:
+            {
                 // Determine the animation speed (adjust as needed)
                 const float animationSpeed = 5.0f;
 
@@ -259,13 +321,33 @@ int main()
                     variationY += movementVector.y * ratio;
                 }
                 else {
-                    // Reset the variations to move all circles to the center
-                    // variationX = variationY = 0;
+                    // Update variationX and variationY to the final position of the clicked circle
+                    //variationX = initialCenterCirclePos.x - circle_vector[row_i][col_i].getPosition().x;
+                    //variationY = initialCenterCirclePos.y - circle_vector[row_i][col_i].getPosition().y;
+
+                    // Store the current variations for case 2
                     variationXpre = variationX;
                     variationYpre = variationY;
+
+                    stato = 2;
+                }
+            }
+            break;
+            case 2:
+                zoomAnimation = true;
+                if (animationProgress < 0.1f) {
+                    // Update the animation progress
+                    animationProgress += animationSpeedZoom;
+
+                    moveCircleAwayFromCenter(window, variationX, variationY, animationProgress);
+                }
+                else {
                     stato = 0;
+                    animationProgress = 0.0f;
+                    zoomAnimation = false;
                     hasClicked = false;
                 }
+                
             break;
             }
         }
@@ -315,7 +397,8 @@ int main()
         window.draw(iconBackSprite);
         
         // Re-Draw circles in a 5x5 grid
-        drawCircles(window, variationX, variationY);
+        if(!zoomAnimation)
+            drawCircles(window, variationX, variationY);
 
         window.display();
     }
