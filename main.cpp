@@ -28,8 +28,9 @@ bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
     return distance <= radius;
 }
 
-void moveCircleAwayFromCenter(sf::RenderWindow& window, float variationX, float variationY, float& animationProgress) {
+void increaseRadiusCircleCenter(sf::RenderWindow& window, float variationX, float variationY, float& animationProgress, int row_i, int col_i) {
     const float maxRadius = 48.f;
+    const float maxZoomRadius = 400.f;
     int alpha = 255;
 
     for (int row = 0; row < ROW; ++row) {
@@ -47,27 +48,32 @@ void moveCircleAwayFromCenter(sf::RenderWindow& window, float variationX, float 
             float centerY = 240.f; // Center Y coordinate
             float distance = std::sqrt(std::pow(xPos - centerX, 2) + std::pow(yPos - centerY, 2));
 
-            // Skip the circle at the center
-            if (distance == 0.f)
-                return;
+            float radius;
+            float newXPos = xPos;
+            float newYPos = yPos;
 
-            // Calculate the radius using a linear function
-            float radius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
+            // Special case for the center circle
+            if (row == row_i && col == col_i) {
+                float initialRadius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
+                radius = initialRadius + (maxZoomRadius - initialRadius) * animationProgress;
+                newXPos = centerX; // Keep the center at 240.0f
+                newYPos = centerY;
+            }
+            else {
+                // Calculate the radius using a linear function
+                radius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
 
-            // Special case for very small distances
-            if (distance < 0.00001f) distance = 0.00001f;
+                // Special case for very small distances
+                if (distance < 0.00001f) distance = 0.00001f;
 
-            // Calculate the movement away from the center using a logarithmic function
-            float maxMovement = distance / 3.f;
-            float movement = maxMovement * (1.f - std::log(radius / maxRadius + 1) / std::log(2.f));
+                // Calculate the movement towards the center using a logarithmic function
+                float maxMovement = distance / 3.f;
+                float movement = maxMovement * (1.f - std::log(radius / maxRadius + 1) / std::log(2.f));
 
-            // Calculate the target position for the circle away from the center
-            float targetXPos = xPos + (xPos - centerX) * movement / distance;
-            float targetYPos = yPos + (yPos - centerY) * movement / distance;
-
-            // Interpolate the circle position between the current and target positions
-            float newXPos = xPos + (targetXPos - xPos) * animationProgress;
-            float newYPos = yPos + (targetYPos - yPos) * animationProgress;
+                // Move the circle towards the center
+                newXPos = xPos - (xPos - centerX) * movement / distance;
+                newYPos = yPos - (yPos - centerY) * movement / distance;
+            }
 
             if (radius < 0) radius = 0;
             // Calculate the opacity based on the radius of the element
@@ -79,10 +85,13 @@ void moveCircleAwayFromCenter(sf::RenderWindow& window, float variationX, float 
             circle_vector[row][col].setRadius(radius);
             updateCircleOpacity(circle_vector[row][col], alpha);
 
-            // Draw the updated circle on the window
-            window.draw(circle_vector[row][col]);
+            // Draw the updated circle on the window (for all circles except the center circle)
+            if (row != row_i || col != col_i)
+                window.draw(circle_vector[row][col]);
         }
     }
+    // Draw the center circle (the one with increasing radius) last
+    window.draw(circle_vector[row_i][col_i]);
 }
 
 void drawCircles(sf::RenderWindow& window, float variationX, float variationY, bool init = false) {
@@ -200,7 +209,7 @@ int main()
     float originalY = iconBackSprite.getPosition().y;
 
     float animationProgress = 0.0f; // Initialize the animation progress to 0
-    const float animationSpeedZoom = 0.001f; // Adjust this value to control the animation speed
+    const float animationSpeedZoom = 0.010f; // Adjust this value to control the animation speed
 
     bool animateBackToInitial = false;
     float initialVariationX = 0.0f;
@@ -335,11 +344,11 @@ int main()
             break;
             case 2:
                 zoomAnimation = true;
-                if (animationProgress < 0.1f) {
+                if (animationProgress < 1.0f) {
                     // Update the animation progress
                     animationProgress += animationSpeedZoom;
 
-                    moveCircleAwayFromCenter(window, variationX, variationY, animationProgress);
+                    increaseRadiusCircleCenter(window, variationXpre, variationYpre, animationProgress, row_i, col_i);
                 }
                 else {
                     stato = 0;
