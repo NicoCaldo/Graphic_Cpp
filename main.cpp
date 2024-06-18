@@ -5,6 +5,9 @@
 #define COL 5
 #define MAX_SPHERE_D 240.0f
 
+#define ICON_DRAWER 0
+#define ICON_CIRCLE 1
+
 sf::CircleShape circle_vector[ROW][COL];
 sf::Vector2f initialCenterCirclePos;
 
@@ -26,6 +29,73 @@ bool isPointInCircle(sf::Vector2f point, sf::Vector2f circlePos, float radius) {
     float dy = point.y - circlePos.y;
     float distance = std::sqrt(dx * dx + dy * dy);
     return distance <= radius;
+}
+
+void decreaseRadiusCircleCenter(sf::RenderWindow& window, float variationX, float variationY, float& animationProgress, int row_i, int col_i) {
+    const float maxRadius = 48.f;
+    const float maxZoomRadius = 400.f;
+    int alpha = 255;
+
+    for (int row = 0; row < ROW; ++row) {
+        float yPos = row * 2 * maxRadius + maxRadius + variationY; // Y position of the row
+
+        for (int col = 0; col < COL; ++col) {
+            float xPos = col * 2 * maxRadius + maxRadius + variationX; // X position of the column
+
+            // Shift odd rows by half radius on the x-axis
+            if (row % 2 != 0)
+                xPos += maxRadius;
+
+            // Calculate the distance from the center
+            float centerX = 240.f; // Center X coordinate
+            float centerY = 240.f; // Center Y coordinate
+            float distance = std::sqrt(std::pow(xPos - centerX, 2) + std::pow(yPos - centerY, 2));
+
+            float radius;
+            float newXPos = xPos;
+            float newYPos = yPos;
+
+            // Special case for the center circle
+            if (row == row_i && col == col_i) {
+                float initialRadius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
+                radius = initialRadius + (maxZoomRadius - initialRadius) * (1.0f - animationProgress);
+                std::cout << radius << std::endl;
+                newXPos = centerX; // Keep the center at 240.0f
+                newYPos = centerY;
+            }
+            else {
+                // Calculate the radius using a linear function
+                radius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
+
+                // Special case for very small distances
+                if (distance < 0.00001f) distance = 0.00001f;
+
+                // Calculate the movement towards the center using a logarithmic function
+                float maxMovement = distance / 3.f;
+                float movement = maxMovement * (1.f - std::log(radius / maxRadius + 1) / std::log(2.f));
+
+                // Move the circle towards the center
+                newXPos = xPos - (xPos - centerX) * movement / distance;
+                newYPos = yPos - (yPos - centerY) * movement / distance;
+            }
+
+            if (radius < 0) radius = 0;
+            // Calculate the opacity based on the radius of the element
+            alpha = static_cast<int>(255.0f * (-1) * std::atan(-radius / 20));
+            if (alpha > 255.0f) alpha = 255.0f;
+
+            // Update the circle position, radius, and opacity
+            circle_vector[row][col].setPosition(newXPos - radius, newYPos - radius);
+            circle_vector[row][col].setRadius(radius);
+            updateCircleOpacity(circle_vector[row][col], alpha);
+
+            // Draw the updated circle on the window (for all circles except the center circle)
+            if (row != row_i || col != col_i)
+                window.draw(circle_vector[row][col]);
+        }
+    }
+    // Draw the center circle (the one with increasing radius) last
+    window.draw(circle_vector[row_i][col_i]);
 }
 
 void increaseRadiusCircleCenter(sf::RenderWindow& window, float variationX, float variationY, float& animationProgress, int row_i, int col_i) {
@@ -56,6 +126,7 @@ void increaseRadiusCircleCenter(sf::RenderWindow& window, float variationX, floa
             if (row == row_i && col == col_i) {
                 float initialRadius = maxRadius - (distance / MAX_SPHERE_D) * maxRadius;
                 radius = initialRadius + (maxZoomRadius - initialRadius) * animationProgress;
+                std::cout << radius << std::endl;
                 newXPos = centerX; // Keep the center at 240.0f
                 newYPos = centerY;
             }
@@ -212,6 +283,7 @@ int main()
     const float animationSpeedZoom = 0.010f; // Adjust this value to control the animation speed
 
     bool animateBackToInitial = false;
+    bool animateBackToDrawer = false;
     float initialVariationX = 0.0f;
     float initialVariationY = 0.0f;
 
@@ -260,7 +332,10 @@ int main()
 
                 if (spriteBounds.contains(static_cast<sf::Vector2f>(currentMousePos)))
                 {
-                    animateBackToInitial = true;
+                    if (!zoomAnimation)
+                        animateBackToInitial = true;
+                    else
+                        animateBackToDrawer = true;
                 }
                 isDragging = false; // Stop dragging
 
@@ -351,12 +426,33 @@ int main()
                     increaseRadiusCircleCenter(window, variationXpre, variationYpre, animationProgress, row_i, col_i);
                 }
                 else {
-                    stato = 0;
+                    stato = 3;
                     animationProgress = 0.0f;
-                    zoomAnimation = false;
-                    hasClicked = false;
                 }
                 
+            break;
+            case 3:
+                if(animateBackToDrawer)
+                    stato = 4;
+                else
+                {
+                    // qui wait facendo altri effetti
+                }
+            break;
+            case 4:
+                if (animationProgress < 1.0f) {
+                    // Update the animation progress
+                    animationProgress += animationSpeedZoom;
+
+                    decreaseRadiusCircleCenter(window, variationXpre, variationYpre, animationProgress, row_i, col_i);
+                }
+                else {
+                    stato = 0;
+                    animationProgress = 0.0f;
+                    hasClicked = false;
+                    animateBackToDrawer = false;
+                    zoomAnimation = false;
+                }
             break;
             }
         }
