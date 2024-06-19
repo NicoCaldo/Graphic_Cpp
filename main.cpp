@@ -1,5 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <ctime>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #define ROW 5
 #define COL 5
@@ -234,6 +237,31 @@ int main()
     sf::RenderWindow window(sf::VideoMode(480, 480), "Drawer");
     window.setFramerateLimit(30);
 
+    // Create the circles
+    const float radius_hours = 30.0f; // Radius of the hours circle
+    const float radius_minutes = 20.0f; // Radius of the minutes circle
+    const float radius_seconds = 10.0f; // Radius of the seconds circle
+    sf::CircleShape hours_circle(radius_hours);
+    sf::CircleShape minutes_circle(radius_minutes);
+    sf::CircleShape seconds_circle(radius_seconds);
+
+    // Set the origin of the circles to their center
+    hours_circle.setOrigin(radius_hours, radius_hours);
+    minutes_circle.setOrigin(radius_minutes, radius_minutes);
+    seconds_circle.setOrigin(radius_seconds, radius_seconds);
+
+    // Set the fill color of the circles
+    hours_circle.setFillColor(sf::Color::Red);
+    minutes_circle.setFillColor(sf::Color::Blue);
+    seconds_circle.setFillColor(sf::Color::Green);
+
+    // Set the initial position of the circles to the center of the window
+    hours_circle.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+    minutes_circle.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+    seconds_circle.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+
+    const float circle_radius = 100.0f; // Radius of the circular path
+
     // Load the image
     sf::Image iconBackImage;
     if (!iconBackImage.loadFromFile("images/i_back.png")) {
@@ -436,7 +464,39 @@ int main()
                     stato = 4;
                 else
                 {
-                    // qui wait facendo altri effetti
+                    // Get the current time
+                    time_t current_time = time(NULL);
+                    struct tm local_time;
+                    localtime_s(&local_time, &current_time);
+
+                    // Calculate the angle of the hours circle
+                    float hours_angle = (local_time.tm_hour % 12 + local_time.tm_min / 60.0f) * 30.0f * M_PI / 180.0f;
+
+                    // Calculate the position of the hours circle on the circular path
+                    float hours_x = window.getSize().x / 2.0f + circle_radius * cos(hours_angle);
+                    float hours_y = window.getSize().y / 2.0f + circle_radius * sin(hours_angle);
+                    hours_circle.setPosition(hours_x, hours_y);
+
+                    // Calculate the angle of the minutes circle
+                    float minutes_angle = local_time.tm_min * 6.0f * M_PI / 180.0f;
+
+                    // Calculate the position of the minutes circle on the circular path
+                    float minutes_x = window.getSize().x / 2.0f + circle_radius * cos(minutes_angle);
+                    float minutes_y = window.getSize().y / 2.0f + circle_radius * sin(minutes_angle);
+                    minutes_circle.setPosition(minutes_x, minutes_y);
+
+                    // Calculate the angle of the seconds circle
+                    float seconds_angle = local_time.tm_sec * 6.0f * M_PI / 180.0f;
+
+                    // Calculate the position of the seconds circle on the circular path
+                    float seconds_x = window.getSize().x / 2.0f + circle_radius * cos(seconds_angle);
+                    float seconds_y = window.getSize().y / 2.0f + circle_radius * sin(seconds_angle);
+                    seconds_circle.setPosition(seconds_x, seconds_y);
+
+                    // Draw the circles
+                    window.draw(hours_circle);
+                    window.draw(minutes_circle);
+                    window.draw(seconds_circle);
                 }
             break;
             case 4:
